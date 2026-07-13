@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentinel — AI Code Review & Security Analysis</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+:root{
+  --bg:#FDF8ED; --bg-alt:#FBF1DC; --surface:#FFFEFA; --surface-2:#FAF3E3;
+  --border:#EDE2C8; --border-strong:#DDCEA6;
+  --text:#1C231D; --text-2:#5B5A4C; --text-muted:#8C8A76;
+  --accent:#D9764A; --accent-2:#B85C34; --accent-soft:#FBE5D6;
+  --violet:#1F6F54; --violet-soft:#DFEEE6;
+  --danger:#C6472F; --danger-soft:#FBE6E0;
+  --success:#1F6F54; --success-soft:#E1F0E8;
+  --warning:#C98A22; --warning-soft:#FBEFDA;
+  --radius:10px; --radius-lg:18px;
+  --font-d:'Sora',sans-serif; --font-b:'Inter',sans-serif; --font-m:'JetBrains Mono',monospace;
+  --shadow:0 1px 2px rgba(28,35,29,.05), 0 8px 24px rgba(28,35,29,.07);
+}
+[data-theme="dark"]{
+  --bg:#181510; --bg-alt:#1E1A13; --surface:#241F17;
+  --surface-2:#2A2419;
+  --border:#3A3225; --border-strong:#4E4432;
+  --text:#F3ECDB; --text-2:#B8AE93; --text-muted:#87806C;
+  --accent:#E68A5C; --accent-2:#D9764A; --accent-soft:#3A2418;
+  --violet:#4FBF95; --violet-soft:#1B3327;
+  --danger:#E07A63; --danger-soft:#3A2019;
+  --success:#4FBF95; --success-soft:#173226;
+  --warning:#E0A94E; --warning-soft:#392A11;
+  --shadow:0 1px 2px rgba(0,0,0,.25), 0 8px 24px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font-b);}
+body{min-height:100vh;}
+h1,h2,h3,h4{font-family:var(--font-d);font-weight:600;margin:0;}
+p{margin:0;}
+button{font-family:var(--font-b);cursor:pointer;}
+input,select,textarea{font-family:var(--font-b);}
+::selection{background:var(--accent-soft);}
+.hidden{display:none !important;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-size:14px;font-weight:500;transition:.15s;}
+.btn:hover{background:var(--surface-2);}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-2);}
+.btn-ghost{border-color:transparent;background:transparent;}
+.btn-ghost:hover{background:var(--surface-2);}
+.btn:disabled{opacity:.55;cursor:not-allowed;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:12px;font-weight:500;}
+.badge-danger{background:var(--danger-soft);color:var(--danger);}
+.badge-warning{background:var(--warning-soft);color:var(--warning);}
+.badge-success{background:var(--success-soft);color:var(--success);}
+.badge-accent{background:var(--accent-soft);color:var(--accent-2);}
+.badge-violet{background:var(--violet-soft);color:var(--violet);}
+input[type=text],input[type=email],input[type=password],select,textarea{
+  width:100%;padding:10px 12px;border-radius:var(--radius);border:1px solid var(--border-strong);
+  background:var(--surface-2);color:var(--text);font-size:14px;outline:none;transition:.15s;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+::placeholder{color:var(--text-muted);}
+a{color:var(--accent-2);text-decoration:none;}
+code{font-family:var(--font-m);}
+
+/* ---------- LANDING ---------- */
+#landing{min-height:100vh;display:flex;flex-direction:column;}
+.land-nav{display:flex;align-items:center;justify-content:space-between;padding:20px 6vw;}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-d);font-weight:700;font-size:19px;}
+.brand .ti{color:var(--accent);font-size:24px;}
+.land-hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 6vw 90px;position:relative;overflow:hidden;}
+.land-hero h1{font-size:clamp(32px,5vw,58px);line-height:1.08;max-width:820px;letter-spacing:-.02em;}
+.land-hero .accent-word{color:var(--accent);}
+.land-hero p.sub{margin-top:20px;font-size:17px;color:var(--text-2);max-width:560px;}
+.land-cta{margin-top:34px;display:flex;gap:12px;}
+.scan-demo{margin-top:56px;width:min(720px,90vw);border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow);overflow:hidden;position:relative;}
+.scan-demo-bar{display:flex;gap:6px;padding:12px 16px;border-bottom:1px solid var(--border);}
+.scan-demo-bar span{width:9px;height:9px;border-radius:50%;background:var(--border-strong);}
+.scan-demo pre{margin:0;padding:20px;font-family:var(--font-m);font-size:12.5px;text-align:left;line-height:1.6;color:var(--text-2);position:relative;overflow:hidden;}
+.scan-line{position:absolute;left:0;top:0;width:100%;height:38%;background:linear-gradient(180deg, transparent, var(--accent-soft) 40%, transparent);animation:scanmove 2.6s ease-in-out infinite;pointer-events:none;}
+@keyframes scanmove{0%{top:-20%;}50%{top:80%;}100%{top:-20%;}}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;padding:70px 6vw;max-width:1120px;margin:0 auto;}
+.feat-card{padding:22px;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface);}
+.feat-card .ti{font-size:22px;color:var(--accent);margin-bottom:12px;display:block;}
+.feat-card h3{font-size:15px;margin-bottom:6px;}
+.feat-card p{font-size:13.5px;color:var(--text-2);line-height:1.5;}
+.land-footer{text-align:center;padding:26px;font-size:13px;color:var(--text-muted);border-top:1px solid var(--border);}
+
+/* ---------- AUTH ---------- */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-alt);padding:20px;}
+.auth-card{width:380px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:34px 30px;box-shadow:var(--shadow);}
+.auth-card h2{font-size:22px;margin-bottom:6px;}
+.auth-card p.sub{color:var(--text-2);font-size:13.5px;margin-bottom:22px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:13px;color:var(--text-2);margin-bottom:6px;font-weight:500;}
+.auth-switch{margin-top:16px;text-align:center;font-size:13.5px;color:var(--text-2);}
+.auth-switch a{cursor:pointer;font-weight:500;}
+.auth-err{color:var(--danger);font-size:12.5px;margin-top:8px;min-height:16px;}
+
+/* ---------- APP SHELL ---------- */
+#app-shell{display:none;min-height:100vh;}
+#app-shell.active{display:flex;}
+.sidebar{width:230px;flex-shrink:0;border-right:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;padding:18px 14px;position:sticky;top:0;height:100vh;}
+.sidebar .brand{padding:6px 8px 22px;}
+.nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:var(--radius);font-size:14px;color:var(--text-2);font-weight:500;margin-bottom:2px;transition:.12s;}
+.nav-item .ti{font-size:18px;}
+.nav-item:hover{background:var(--surface-2);color:var(--text);}
+.nav-item.active{background:var(--accent-soft);color:var(--accent-2);}
+.nav-sep{height:1px;background:var(--border);margin:12px 4px;}
+.sidebar-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 8px;border-top:1px solid var(--border);padding-top:14px;}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--violet-soft);color:var(--violet);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0;}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 30px;border-bottom:1px solid var(--border);background:var(--surface);}
+.topbar h1{font-size:18px;}
+.content{padding:28px 30px 60px;max-width:1180px;width:100%;margin:0 auto;}
+
+/* ---------- DASHBOARD ---------- */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:22px;}
+.stat-card{display:flex;align-items:center;gap:16px;}
+.gauge{position:relative;width:64px;height:64px;flex-shrink:0;}
+.gauge svg{transform:rotate(-90deg);}
+.gauge-val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;font-family:var(--font-d);}
+.stat-label{font-size:12.5px;color:var(--text-muted);margin-bottom:4px;}
+.stat-num{font-size:24px;font-weight:600;font-family:var(--font-d);}
+.two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;}
+@media(max-width:900px){.two-col{grid-template-columns:1fr;}}
+.list-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);font-size:13.5px;}
+.list-row:last-child{border-bottom:none;}
+
+/* ---------- UPLOAD ---------- */
+.dropzone{border:2px dashed var(--border-strong);border-radius:var(--radius-lg);padding:34px;text-align:center;background:var(--surface-2);transition:.15s;cursor:pointer;}
+.dropzone.drag{border-color:var(--accent);background:var(--accent-soft);}
+.dropzone .ti{font-size:30px;color:var(--accent);margin-bottom:8px;display:block;}
+.file-chip{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);padding:6px 12px;border-radius:100px;font-size:12.5px;margin:6px 6px 0 0;}
+.file-chip .ti{font-size:14px;color:var(--text-muted);cursor:pointer;}
+.agent-row{display:flex;align-items:center;gap:12px;padding:12px 0;font-size:13.5px;}
+.agent-dot{width:9px;height:9px;border-radius:50%;background:var(--border-strong);flex-shrink:0;}
+.agent-dot.active{background:var(--accent);animation:pulse 1s infinite;}
+.agent-dot.done{background:var(--success);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+/* ---------- RESULTS ---------- */
+.sev-item{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--border);}
+.sev-item:last-child{border-bottom:none;}
+.sev-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0;}
+.chip-list{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{background:var(--surface-2);border:1px solid var(--border);padding:6px 12px;border-radius:100px;font-size:12.5px;color:var(--text-2);}
+.section-title{display:flex;align-items:center;gap:9px;font-size:14.5px;margin-bottom:14px;}
+.section-title .ti{font-size:17px;color:var(--accent);}
+
+/* ---------- CHAT ---------- */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 150px);}
+.chat-msgs{flex:1;overflow-y:auto;padding:6px 4px 20px;}
+.msg{max-width:78%;margin-bottom:16px;padding:12px 15px;border-radius:14px;font-size:14px;line-height:1.65;}
+.msg.user{background:var(--accent);color:#fff;margin-left:auto;border-bottom-right-radius:4px;}
+.msg.assistant{background:var(--surface);border:1px solid var(--border);margin-right:auto;border-bottom-left-radius:4px;}
+.msg pre{background:#0d1117;border-radius:8px;padding:12px;overflow-x:auto;font-size:12.5px;margin:8px 0;}
+.msg code:not(pre code){background:var(--surface-2);padding:1px 5px;border-radius:4px;font-size:12.5px;}
+.copy-btn{font-size:11px;color:var(--text-muted);cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-top:4px;}
+.chat-input-row{display:flex;gap:10px;align-items:flex-end;padding-top:12px;border-top:1px solid var(--border);}
+.chat-input-row textarea{resize:none;height:44px;padding-top:11px;}
+.suggested{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.sugg-chip{background:var(--surface);border:1px solid var(--border);padding:8px 14px;border-radius:100px;font-size:13px;cursor:pointer;color:var(--text-2);}
+.sugg-chip:hover{border-color:var(--accent);color:var(--accent-2);}
+
+/* ---------- SETTINGS/PROFILE ---------- */
+.toggle{width:42px;height:24px;border-radius:100px;background:var(--border-strong);position:relative;cursor:pointer;flex-shrink:0;}
+.toggle.on{background:var(--accent);}
+.toggle-knob{width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:.15s;}
+.toggle.on .toggle-knob{left:21px;}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);}
+.settings-row:last-child{border-bottom:none;}
+
+.empty-state{text-align:center;padding:50px 20px;color:var(--text-muted);}
+.empty-state .ti{font-size:34px;margin-bottom:10px;display:block;color:var(--border-strong);}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- LANDING -->
+<div id="landing">
+  <nav class="land-nav">
+    <div class="brand"><i class="ti ti-shield-check"></i>Sentinel</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="goAuth('login')">Log in</button>
+      <button class="btn btn-primary" onclick="quickStart()">Get started</button>
+    </div>
+  </nav>
+  <div class="land-hero">
+    <span class="badge badge-accent" style="margin-bottom:18px;"><i class="ti ti-point-filled" style="color:var(--violet);font-size:10px;"></i>Multi-agent AI system · Online</span>
+    <h1>AI Code Review <span style="color:var(--violet);">&amp;</span> Security <span style="color:var(--accent);">Analysis</span> Agent</h1>
+    <p class="sub">Sentinel runs a team of AI agents over every commit — reviewing logic, hunting vulnerabilities, and explaining what to fix, in plain language, in seconds.</p>
+    <div class="land-cta">
+      <button class="btn btn-primary" onclick="quickStart()"><i class="ti ti-rocket"></i>Start free analysis</button>
+      <button class="btn" onclick="document.getElementById('feat').scrollIntoView({behavior:'smooth'})">See how it works</button>
+    </div>
+    <div class="scan-demo">
+      <div class="scan-demo-bar"><span></span><span></span><span></span></div>
+      <pre>def transfer(user, amount, to_account):
+    query = "UPDATE accounts SET balance = balance - "
+             + amount + " WHERE user = '" + user + "'"
+    db.execute(query)
+    log.write(f"{user} sent {amount} to {to_account}")
+    return True</pre>
+      <div class="scan-line"></div>
+    </div>
+  </div>
+  <div class="features" id="feat">
+    <div class="feat-card"><i class="ti ti-bug"></i><h3>Bug &amp; logic detection</h3><p>Catches edge cases, null-handling gaps, and logic errors before your reviewers have to.</p></div>
+    <div class="feat-card"><i class="ti ti-lock"></i><h3>Security analysis</h3><p>Flags injection risks, unsafe input handling, and secrets, with a risk rating per issue.</p></div>
+    <div class="feat-card"><i class="ti ti-file-text"></i><h3>Instant summaries</h3><p>Plain-language explanations of what a file does, for faster onboarding and review.</p></div>
+    <div class="feat-card"><i class="ti ti-message-circle"></i><h3>RAG chat assistant</h3><p>Ask questions about your codebase and get answers grounded in the files you upload.</p></div>
+    <div class="feat-card"><i class="ti ti-language"></i><h3>Multi-language</h3><p>Java, Python, C, C++, JavaScript and TypeScript, analyzed with language-aware prompts.</p></div>
+    <div class="feat-card"><i class="ti ti-report"></i><h3>Exportable reports</h3><p>Turn any analysis into a shareable report your team can act on.</p></div>
+  </div>
+  <div class="land-footer">Sentinel — an AI-assisted code review demo platform.</div>
+</div>
+
+<!-- AUTH -->
+<div id="auth" class="auth-wrap hidden">
+  <div class="auth-card">
+    <div class="brand" style="margin-bottom:18px;"><i class="ti ti-shield-check"></i>Sentinel</div>
+    <div id="login-form">
+      <h2>Welcome back</h2>
+      <p class="sub">Log in to your workspace.</p>
+      <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="you@company.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doLogin()"><i class="ti ti-login"></i>Log in</button>
+      <p class="auth-err" id="login-err"></p>
+      <p class="auth-switch">No account? <a onclick="goAuth('signup')">Sign up</a></p>
+    </div>
+    <div id="signup-form" class="hidden">
+      <h2>Create your workspace</h2>
+      <p class="sub">Start reviewing code with AI agents in seconds.</p>
+      <div class="field"><label>Full name</label><input type="text" id="signup-name" placeholder="Ada Lovelace"></div>
+      <div class="field"><label>Email</label><input type="email" id="signup-email" placeholder="you@company.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="signup-pass" placeholder="Create a password"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doSignup()"><i class="ti ti-user-plus"></i>Create account</button>
+      <p class="auth-err" id="signup-err"></p>
+      <p class="auth-switch">Already have an account? <a onclick="goAuth('login')">Log in</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><i class="ti ti-shield-check"></i>Sentinel</div>
+    <div id="nav"></div>
+    <div class="sidebar-foot">
+      <div class="avatar" id="sidebar-avatar">?</div>
+      <div style="flex:1;min-width:0;">
+        <p style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="sidebar-name">—</p>
+        <a style="font-size:12px;color:var(--text-muted);cursor:pointer;" onclick="doLogout()">Leave</a>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <h1 id="page-title">Dashboard</h1>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div class="toggle" id="theme-toggle" onclick="toggleTheme()"><div class="toggle-knob"></div></div>
+        <i class="ti ti-moon" style="color:var(--text-muted);font-size:16px;"></i>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<script>
+/* ---------------- STATE ---------------- */
+let profile = null;
+let theme = 'light';
+let history_ = [];
+let currentAnalysis = null;
+let chatMessages = [];
+let uploadedFiles = [];
+let analyzing = false;
+
+const NAV = [
+  {id:'dashboard', label:'Dashboard', icon:'ti-layout-dashboard'},
+  {id:'upload', label:'Upload & analyze', icon:'ti-upload'},
+  {id:'results', label:'Analysis results', icon:'ti-report-analytics'},
+  {id:'chat', label:'AI chat assistant', icon:'ti-message-circle'},
+  {id:'history', label:'Analysis history', icon:'ti-history'},
+  {id:'reports', label:'Reports', icon:'ti-file-text'},
+  {id:'sep'},
+  {id:'profile', label:'Profile', icon:'ti-user'},
+  {id:'settings', label:'Settings', icon:'ti-settings'},
+];
+let currentView = 'dashboard';
+
+/* ---------------- BOOT ---------------- */
+async function boot(){
+  try{
+    const p = await window.storage.get('profile', false);
+    if(p && p.value){
+      profile = JSON.parse(p.value);
+      const s = await safeGet('settings', false);
+      if(s) theme = JSON.parse(s.value).theme || 'light';
+      applyTheme();
+      await loadHistory();
+      await loadChat();
+      enterApp();
+      return;
+    }
+  }catch(e){}
+  document.getElementById('landing').style.display='flex';
+}
+boot();
+
+async function safeGet(key, shared){
+  try{ return await window.storage.get(key, shared); }catch(e){ return null; }
+}
+
+function goAuth(mode){
+  document.getElementById('landing').style.display='none';
+  document.getElementById('auth').classList.remove('hidden');
+  document.getElementById('login-form').classList.toggle('hidden', mode!=='login');
+  document.getElementById('signup-form').classList.toggle('hidden', mode!=='signup');
+}
+
+async function quickStart(){
+  const existing = await safeGet('profile', false);
+  if(existing && existing.value){
+    profile = JSON.parse(existing.value);
+  } else {
+    profile = {name:'Guest', email:''};
+    try{ await window.storage.set('profile', JSON.stringify(profile), false); }catch(e){}
+  }
+  enterApp();
+}
+
+async function doSignup(){
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pass = document.getElementById('signup-pass').value;
+  const err = document.getElementById('signup-err');
+  if(!name || !email || !pass){ err.textContent = 'Fill in every field to continue.'; return; }
+  profile = {name, email};
+  try{
+    await window.storage.set('profile', JSON.stringify(profile), false);
+    document.getElementById('auth').classList.add('hidden');
+    enterApp();
+  }catch(e){ err.textContent = 'Could not create your workspace. Try again.'; }
+}
+
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-err');
+  if(!email || !pass){ err.textContent = 'Enter your email and password.'; return; }
+  const existing = await safeGet('profile', false);
+  if(existing && existing.value){
+    profile = JSON.parse(existing.value);
+  } else {
+    profile = {name: email.split('@')[0], email};
+    await window.storage.set('profile', JSON.stringify(profile), false);
+  }
+  document.getElementById('auth').classList.add('hidden');
+  enterApp();
+}
+
+async function doLogout(){
+  document.getElementById('app-shell').classList.remove('active');
+  document.getElementById('landing').style.display='flex';
+}
+
+function enterApp(){
+  document.getElementById('landing').style.display='none';
+  document.getElementById('auth').classList.add('hidden');
+  document.getElementById('app-shell').classList.add('active');
+  document.getElementById('sidebar-name').textContent = profile.name;
+  document.getElementById('sidebar-avatar').textContent = profile.name.slice(0,1).toUpperCase();
+  renderNav();
+  setView('dashboard');
+}
+
+function renderNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = NAV.map(item=>{
+    if(item.id==='sep') return '<div class="nav-sep"></div>';
+    return `<div class="nav-item ${currentView===item.id?'active':''}" onclick="setView('${item.id}')"><i class="ti ${item.icon}"></i>${item.label}</div>`;
+  }).join('');
+}
+
+function setView(v){
+  currentView = v;
+  renderNav();
+  const titles = {dashboard:'Dashboard', upload:'Upload & analyze', results:'Analysis results', chat:'AI chat assistant', history:'Analysis history', reports:'Reports', profile:'Profile', settings:'Settings'};
+  document.getElementById('page-title').textContent = titles[v] || '';
+  const c = document.getElementById('content');
+  if(v==='dashboard') c.innerHTML = renderDashboard();
+  else if(v==='upload') c.innerHTML = renderUpload();
+  else if(v==='results') c.innerHTML = renderResults();
+  else if(v==='chat'){ c.innerHTML = renderChat(); scrollChatBottom(); }
+  else if(v==='history') c.innerHTML = renderHistory();
+  else if(v==='reports') c.innerHTML = renderReports();
+  else if(v==='profile') c.innerHTML = renderProfile();
+  else if(v==='settings') c.innerHTML = renderSettings();
+  if(v==='upload') setupDropzone();
+  if(window.hljs) hljs.highlightAll();
+}
+
+/* ---------------- THEME ---------------- */
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme', theme);
+  const t = document.getElementById('theme-toggle');
+  if(t) t.classList.toggle('on', theme==='dark');
+}
+async function toggleTheme(){
+  theme = theme==='dark' ? 'light' : 'dark';
+  applyTheme();
+  try{ await window.storage.set('settings', JSON.stringify({theme}), false); }catch(e){}
+}
+
+/* ---------------- UTIL ---------------- */
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function sevColor(sev){ return (sev==='Critical'||sev==='High') ? 'danger' : sev==='Medium' ? 'warning' : 'success'; }
+function verdictColor(v){ return v==='Block' ? 'danger' : v==='Request changes' ? 'warning' : 'success'; }
+function scoreColor(n){ return n>=80?'--success':n>=50?'--warning':'--danger'; }
+function gauge(id,val,label){
+  const r=26, c=2*Math.PI*r, off=c-(val/100)*c;
+  const col = scoreColor(val);
+  return `<div class="gauge"><svg width="64" height="64"><circle cx="32" cy="32" r="${r}" stroke="var(--border)" stroke-width="6" fill="none"/><circle cx="32" cy="32" r="${r}" stroke="var(${col})" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" style="transition:stroke-dashoffset 1s ease"/></svg><div class="gauge-val">${val}</div></div>`;
+}
+function timeAgo(ts){
+  const d = Math.floor((Date.now()-ts)/1000);
+  if(d<60) return 'just now';
+  if(d<3600) return Math.floor(d/60)+'m ago';
+  if(d<86400) return Math.floor(d/3600)+'h ago';
+  return Math.floor(d/86400)+'d ago';
+}
+function renderMarkdownLite(text){
+  let html = escapeHtml(text);
+  html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (m,lang,code)=>`<pre><code class="language-${lang||'plaintext'}">${code}</code></pre><span class="copy-btn" onclick="copyText(this)" data-code="${encodeURIComponent(code)}"><i class="ti ti-copy"></i>Copy code</span>`);
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  html = html.replace(/^### (.*)$/gm, '<h4 style="margin:12px 0 4px;font-size:14px;">$1</h4>');
+  html = html.replace(/^## (.*)$/gm, '<h4 style="margin:14px 0 6px;font-size:15px;">$1</h4>');
+  html = html.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+  html = html.replace(/^- (.*)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>[\s\S]*?<\/li>\n?)+/g, m=>`<ul style="margin:6px 0;padding-left:20px;">${m}</ul>`);
+  html = html.replace(/\n\n/g,'<br><br>');
+  return html;
+}
+function copyText(el){
+  const code = decodeURIComponent(el.getAttribute('data-code'));
+  navigator.clipboard.writeText(code).then(()=>{ el.innerHTML = '<i class="ti ti-check"></i>Copied'; setTimeout(()=>el.innerHTML='<i class="ti ti-copy"></i>Copy code',1500); });
+}
+
+/* ---------------- CLAUDE API ---------------- */
+async function callClaude(messages, system){
+  const body = { model:"claude-sonnet-4-6", max_tokens:1000, messages };
+  if(system) body.system = system;
+  const isLocal = (location.hostname==='localhost' || location.hostname==='127.0.0.1');
+  const endpoint = isLocal ? '/api/messages' : 'https://api.anthropic.com/v1/messages';
+  const res = await fetch(endpoint, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  return (data.content||[]).map(b=>b.text||'').join('\n');
+}
+
+/* ---------------- DASHBOARD ---------------- */
+function renderDashboard(){
+  const total = history_.length;
+  const avg = (key)=> total ? Math.round(history_.reduce((a,h)=>a+(h.metrics?.[key]||0),0)/total) : 0;
+  const recent = history_.slice(0,5);
+  return `
+  <div class="stat-grid">
+    <div class="card stat-card">${gauge(1,avg('security_score'))}<div><p class="stat-label">Avg security score</p><p class="stat-num">${avg('security_score')}</p></div></div>
+    <div class="card stat-card">${gauge(2,avg('quality_score'))}<div><p class="stat-label">Avg code quality</p><p class="stat-num">${avg('quality_score')}</p></div></div>
+    <div class="card stat-card"><div class="gauge" style="display:flex;align-items:center;justify-content:center;background:var(--violet-soft);border-radius:50%;color:var(--violet);font-family:var(--font-d);font-weight:600;font-size:20px;">${total}</div><div><p class="stat-label">Total analyses</p><p class="stat-num">${total}</p></div></div>
+    <div class="card stat-card"><div class="gauge" style="display:flex;align-items:center;justify-content:center;background:var(--accent-soft);border-radius:50%;color:var(--accent-2);"><i class="ti ti-message-circle" style="font-size:22px;"></i></div><div><p class="stat-label">Chat messages</p><p class="stat-num">${chatMessages.length}</p></div></div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="section-title"><i class="ti ti-clock"></i>Recent uploads</div>
+      ${recent.length ? recent.map(h=>`<div class="list-row"><span><i class="ti ti-file-code" style="color:var(--text-muted);margin-right:8px;"></i>${escapeHtml(h.filename||'snippet')} <span style="color:var(--text-muted);">· ${h.language}</span></span><span class="badge badge-${sevColor(h.metrics.security_score<50?'High':h.metrics.security_score<80?'Medium':'Low')}">${h.metrics.security_score}/100</span></div>`).join('') : `<div class="empty-state"><i class="ti ti-inbox"></i>No analyses yet — upload your first file.</div>`}
+    </div>
+    <div class="card">
+      <div class="section-title"><i class="ti ti-sparkles"></i>AI insights</div>
+      <p style="font-size:13.5px;color:var(--text-2);line-height:1.7;">${total ? `Across ${total} analysis${total>1?'es':''}, your average security score is <b>${avg('security_score')}</b> and code quality is <b>${avg('quality_score')}</b>. ${avg('security_score')<70?'Consider prioritizing the security issues flagged in your recent uploads.':'Nice work — your recent uploads look solid.'}` : 'Run your first analysis to see personalized insights here.'}</p>
+      <button class="btn btn-primary" style="margin-top:16px;width:100%;justify-content:center;" onclick="setView('upload')"><i class="ti ti-plus"></i>New analysis</button>
+    </div>
+  </div>`;
+}
+
+/* ---------------- UPLOAD ---------------- */
+const LANG_EXT = {py:'Python', java:'Java', js:'JavaScript', ts:'TypeScript', c:'C', cpp:'C++', cc:'C++', h:'C', hpp:'C++'};
+function renderUpload(){
+  return `
+  <div class="card" style="margin-bottom:18px;">
+    <div class="section-title"><i class="ti ti-upload"></i>Upload code</div>
+    <div style="display:flex;gap:12px;margin-bottom:16px;">
+      <select id="up-lang" style="width:180px;">
+        <option>Auto-detect</option><option>Python</option><option>Java</option><option>JavaScript</option><option>TypeScript</option><option>C</option><option>C++</option>
+      </select>
+    </div>
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+      <i class="ti ti-cloud-upload"></i>
+      <p style="font-weight:500;font-size:14px;">Drag and drop files, or click to browse</p>
+      <p style="font-size:12.5px;color:var(--text-muted);margin-top:4px;">Supports .py .java .js .ts .c .cpp — multiple files allowed</p>
+      <input type="file" id="file-input" class="hidden" multiple onchange="handleFiles(this.files)">
+    </div>
+    <div id="file-chips" style="margin-top:10px;">${uploadedFiles.map((f,i)=>`<span class="file-chip"><i class="ti ti-file-code"></i>${escapeHtml(f.name)}<i class="ti ti-x" onclick="removeFile(${i})"></i></span>`).join('')}</div>
+    <p style="font-size:12.5px;color:var(--text-muted);margin:14px 0 6px;">Or paste code directly:</p>
+    <textarea id="paste-code" rows="8" placeholder="Paste your code here..." style="font-family:var(--font-m);font-size:13px;"></textarea>
+    <button class="btn btn-primary" style="margin-top:16px;" id="analyze-btn" onclick="runAnalysis()"><i class="ti ti-player-play"></i>Run AI analysis</button>
+  </div>
+  <div id="backend-status" style="margin-bottom:14px;"></div>
+  <div class="card hidden" id="agent-progress">
+    <div class="section-title"><i class="ti ti-robot"></i>AI agents at work</div>
+    <div class="agent-row"><div class="agent-dot" id="dot-1"></div><b>Code Analysis Agent</b> — reviewing structure, code smells, design issues</div>
+    <div class="agent-row"><div class="agent-dot" id="dot-2"></div><b>Security Vulnerability Agent</b> — scanning for OWASP-standard issues</div>
+    <div class="agent-row"><div class="agent-dot" id="dot-3"></div><b>Remediation Agent</b> — drafting fixes and corrected code</div>
+    <div class="agent-row"><div class="agent-dot" id="dot-4"></div><b>PR Summary Agent</b> — compiling the review summary and verdict</div>
+  </div>`;
+}
+function setupDropzone(){
+  const dz = document.getElementById('dropzone');
+  if(!dz) return;
+  ['dragover','dragenter'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');}));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');}));
+  dz.addEventListener('drop', e=>{ handleFiles(e.dataTransfer.files); });
+}
+function handleFiles(files){
+  Array.from(files).forEach(f=>{
+    const reader = new FileReader();
+    reader.onload = ()=>{ uploadedFiles.push({name:f.name, content: reader.result}); setView('upload'); };
+    reader.readAsText(f);
+  });
+}
+function removeFile(i){ uploadedFiles.splice(i,1); setView('upload'); }
+
+async function submitToBackend(code, language, filename){
+  // Calls the real FastAPI Submission Module (Milestone 1) — separate from
+  // the AI analysis call below. Non-blocking on failure: if the FastAPI
+  // server isn't running, the AI analysis still proceeds, but the UI shows
+  // that the backend submission didn't happen so it's never silently hidden.
+  try{
+    const body = { code, filename };
+    if(language && language !== 'Auto-detect') body.language = language;
+    const res = await fetch('http://localhost:8000/api/submissions/text', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    if(!res.ok){ const err = await res.json().catch(()=>({})); return {ok:false, error: err.detail || `HTTP ${res.status}`}; }
+    const data = await res.json();
+    return {ok:true, data};
+  }catch(err){
+    return {ok:false, error: 'Backend not reachable (is `uvicorn app.main:app --port 8000` running?)'};
+  }
+}
+
+function renderBackendStatus(result){
+  const el = document.getElementById('backend-status');
+  if(!el) return;
+  if(!result){ el.innerHTML=''; return; }
+  if(!result.ok){
+    el.innerHTML = `<div class="card" style="border-color:var(--danger);"><div class="section-title"><i class="ti ti-plug-x" style="color:var(--danger);"></i>FastAPI backend (Submission Module)</div><p style="font-size:13px;color:var(--danger);">${escapeHtml(result.error)}</p></div>`;
+    return;
+  }
+  const d = result.data;
+  const syntaxBadge = d.syntax_valid
+    ? `<span class="badge badge-success">Syntax valid</span>`
+    : `<span class="badge badge-danger">Syntax error: ${escapeHtml(d.syntax_error||'')}</span>`;
+  el.innerHTML = `<div class="card" style="border-color:var(--success);"><div class="section-title"><i class="ti ti-plug-connected" style="color:var(--success);"></i>FastAPI backend (Submission Module)</div>
+    <p style="font-size:13px;color:var(--text-2);">Submission id <code>${escapeHtml(d.id)}</code> · language <b>${escapeHtml(d.language)}</b>${d.language_auto_detected?' (auto-detected)':''} · ${syntaxBadge}</p></div>`;
+}
+
+async function runAnalysis(){
+  if(analyzing) return;
+  const pasted = document.getElementById('paste-code').value.trim();
+  let combined = '';
+  let filename = null;
+  let lang = document.getElementById('up-lang').value;
+  if(uploadedFiles.length){
+    combined = uploadedFiles.map(f=>`// FILE: ${f.name}\n${f.content}`).join('\n\n');
+    filename = uploadedFiles.length===1 ? uploadedFiles[0].name : `${uploadedFiles.length} files`;
+    if(lang==='Auto-detect'){
+      const ext = uploadedFiles[0].name.split('.').pop().toLowerCase();
+      lang = LANG_EXT[ext] || 'Auto-detect';
+    }
+  } else if(pasted){
+    combined = pasted;
+    filename = 'pasted-snippet';
+  } else {
+    alert('Upload a file or paste some code first.');
+    return;
+  }
+  combined = combined.slice(0, 12000);
+
+  analyzing = true;
+  document.getElementById('agent-progress').classList.remove('hidden');
+  renderBackendStatus(null);
+  document.getElementById('analyze-btn').disabled = true;
+  document.getElementById('analyze-btn').innerHTML = '<i class="ti ti-loader-2"></i>Analyzing...';
+
+  const dots = ['dot-1','dot-2','dot-3','dot-4'];
+  dots.forEach((id,i)=> setTimeout(()=>{ document.getElementById(id)?.classList.add('active'); }, i*500));
+
+  // Milestone 1: submit to the real FastAPI Submission Module first. This
+  // is independent of the AI analysis call below — it proves the Code
+  // Submission Module (paste/upload -> language detection -> basic syntax
+  // check) is actually wired end-to-end, not just present in the backend
+  // codebase.
+  const backendResult = await submitToBackend(combined, lang, filename);
+  renderBackendStatus(backendResult);
+
+  const schemaHint = '{"summary":string,"pr_verdict":"Approve|Approve with suggestions|Request changes|Block","metrics":{"security_score":number,"quality_score":number,"maintainability_score":number,"complexity":"Low|Medium|High"},"bugs":[{"title":string,"detail":string,"severity":"Low|Medium|High"}],"security_issues":[{"title":string,"detail":string,"severity":"Low|Medium|High|Critical","owasp_category":string}],"fixes":[{"title":string,"recommendation":string,"corrected_code":string}],"code_smells":[string],"best_practices":[string],"performance":[string]}';
+  const system = "You are a pipeline of four specialist agents: a Code Analysis Agent, a Security Vulnerability Agent (tag every issue with its closest OWASP Top 10 category, e.g. 'A03: Injection'), a Remediation Agent (give a specific fix and a short corrected code example per issue, under 8 lines each), and a PR Summary Agent (write the summary and a clear verdict). Return ONLY valid minified JSON, no markdown fences, no commentary, matching exactly this schema: " + schemaHint + ". Keep each array to at most 4 items and each detail under 25 words to stay concise.";
+  const userMsg = `Language: ${lang}. Analyze the following code:\n\n${combined}`;
+
+  try{
+    const raw = await callClaude([{role:'user', content:userMsg}], system);
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    const record = { id: 'a_'+Date.now(), ts: Date.now(), filename, language: lang, code: combined, backendSubmissionId: backendResult.ok ? backendResult.data.id : null, ...parsed };
+    currentAnalysis = record;
+    history_.unshift(record);
+    try{ await window.storage.set('analysis:'+record.id, JSON.stringify(record), false); }catch(e){}
+    uploadedFiles = [];
+    document.getElementById('paste-code').value='';
+    setTimeout(()=>{ analyzing=false; setView('results'); }, 600);
+  }catch(err){
+    analyzing = false;
+    document.getElementById('agent-progress').classList.add('hidden');
+    document.getElementById('analyze-btn').disabled=false;
+    document.getElementById('analyze-btn').innerHTML='<i class="ti ti-player-play"></i>Run AI analysis';
+    alert('Analysis failed — try again. ('+err+')');
+  }
+}
+
+/* ---------------- RESULTS ---------------- */
+function renderResults(){
+  const a = currentAnalysis;
+  if(!a) return `<div class="card"><div class="empty-state"><i class="ti ti-report-analytics"></i>No analysis selected yet.<br><button class="btn btn-primary" style="margin-top:14px;" onclick="setView('upload')">Run an analysis</button></div></div>`;
+  return `
+  <div class="card" style="margin-bottom:18px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div><p style="font-size:12.5px;color:var(--text-muted);">${escapeHtml(a.filename||'')} · ${a.language}</p><h3 style="margin-top:4px;">PR summary</h3></div>
+      <button class="btn" onclick="downloadReport('${a.id}')"><i class="ti ti-download"></i>Download report</button>
+    </div>
+    <p style="margin-top:10px;font-size:14px;color:var(--text-2);line-height:1.7;">${escapeHtml(a.summary)}</p>
+    ${a.pr_verdict ? `<span class="badge badge-${verdictColor(a.pr_verdict)}" style="margin-top:10px;display:inline-block;">${escapeHtml(a.pr_verdict)}</span>` : ''}
+  </div>
+  <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
+    <div class="card stat-card">${gauge('s',a.metrics.security_score)}<div><p class="stat-label">Security score</p><p class="stat-num">${a.metrics.security_score}</p></div></div>
+    <div class="card stat-card">${gauge('q',a.metrics.quality_score)}<div><p class="stat-label">Code quality</p><p class="stat-num">${a.metrics.quality_score}</p></div></div>
+    <div class="card stat-card">${gauge('m',a.metrics.maintainability_score)}<div><p class="stat-label">Maintainability</p><p class="stat-num">${a.metrics.maintainability_score}</p></div></div>
+    <div class="card" style="display:flex;flex-direction:column;justify-content:center;"><p class="stat-label">Complexity</p><span class="badge badge-${sevColor(a.metrics.complexity)}" style="width:fit-content;margin-top:4px;">${a.metrics.complexity}</span></div>
+  </div>
+  <div class="two-col" style="margin-top:18px;">
+    <div class="card">
+      <div class="section-title"><i class="ti ti-bug"></i>Code Analysis Agent — bugs &amp; design issues</div>
+      ${a.bugs.length? a.bugs.map(b=>`<div class="sev-item"><div class="sev-dot" style="background:var(--${sevColor(b.severity)})"></div><div><p style="font-weight:500;font-size:13.5px;">${escapeHtml(b.title)} <span class="badge badge-${sevColor(b.severity)}" style="margin-left:6px;">${b.severity}</span></p><p style="font-size:13px;color:var(--text-2);margin-top:3px;">${escapeHtml(b.detail)}</p></div></div>`).join('') : `<p style="font-size:13px;color:var(--text-muted);">No significant bugs detected.</p>`}
+    </div>
+    <div class="card">
+      <div class="section-title"><i class="ti ti-lock"></i>Security Vulnerability Agent</div>
+      ${a.security_issues.length? a.security_issues.map(b=>`<div class="sev-item"><div class="sev-dot" style="background:var(--${sevColor(b.severity)})"></div><div><p style="font-weight:500;font-size:13.5px;">${escapeHtml(b.title)} <span class="badge badge-${sevColor(b.severity)}" style="margin-left:6px;">${b.severity}</span>${b.owasp_category?`<span class="chip" style="margin-left:6px;padding:1px 8px;font-size:11px;">${escapeHtml(b.owasp_category)}</span>`:''}</p><p style="font-size:13px;color:var(--text-2);margin-top:3px;">${escapeHtml(b.detail)}</p></div></div>`).join('') : `<p style="font-size:13px;color:var(--text-muted);">No security issues detected.</p>`}
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px;">
+    <div class="section-title"><i class="ti ti-tools"></i>Remediation Agent — recommended fixes</div>
+    ${(a.fixes&&a.fixes.length)? a.fixes.map(f=>`<div class="agent-row" style="display:block;padding:12px 0;border-bottom:1px solid var(--border);"><p style="font-weight:500;font-size:13.5px;margin-bottom:4px;">${escapeHtml(f.title)}</p><p style="font-size:13px;color:var(--text-2);margin-bottom:8px;">${escapeHtml(f.recommendation)}</p><pre style="background:#1a1a1a;border-radius:8px;padding:12px;overflow-x:auto;"><code class="language-${a.language.toLowerCase()}">${escapeHtml(f.corrected_code||'')}</code></pre></div>`).join('') : `<p style="font-size:13px;color:var(--text-muted);">No specific fixes generated.</p>`}
+  </div>
+  <div class="two-col" style="margin-top:18px;">
+    <div class="card">
+      <div class="section-title"><i class="ti ti-flame"></i>Code smells</div>
+      <div class="chip-list">${a.code_smells.map(s=>`<span class="chip">${escapeHtml(s)}</span>`).join('') || '<p style="font-size:13px;color:var(--text-muted);">None found.</p>'}</div>
+    </div>
+    <div class="card">
+      <div class="section-title"><i class="ti ti-bolt"></i>Performance suggestions</div>
+      ${a.performance.map(s=>`<p style="font-size:13px;color:var(--text-2);margin-bottom:8px;">• ${escapeHtml(s)}</p>`).join('') || '<p style="font-size:13px;color:var(--text-muted);">No suggestions.</p>'}
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px;">
+    <div class="section-title"><i class="ti ti-checklist"></i>Best practice suggestions</div>
+    ${a.best_practices.map(s=>`<p style="font-size:13px;color:var(--text-2);margin-bottom:8px;">• ${escapeHtml(s)}</p>`).join('')}
+  </div>`;
+}
+
+function buildReportMarkdown(a){
+  return `# Code Review Report\n\n**File:** ${a.filename} | **Language:** ${a.language} | **Date:** ${new Date(a.ts).toLocaleString()}\n\n## PR Summary\n${a.summary}\n\n**Verdict:** ${a.pr_verdict||'-'}\n\n## Metrics\n- Security score: ${a.metrics.security_score}/100\n- Quality score: ${a.metrics.quality_score}/100\n- Maintainability score: ${a.metrics.maintainability_score}/100\n- Complexity: ${a.metrics.complexity}\n\n## Bugs\n${a.bugs.map(b=>`- **${b.title}** (${b.severity}): ${b.detail}`).join('\n') || 'None'}\n\n## Security issues (OWASP-tagged)\n${a.security_issues.map(b=>`- **${b.title}** [${b.owasp_category||'-'}] (${b.severity}): ${b.detail}`).join('\n') || 'None'}\n\n## Remediation — recommended fixes\n${(a.fixes||[]).map(f=>`### ${f.title}\n${f.recommendation}\n\`\`\`\n${f.corrected_code}\n\`\`\``).join('\n\n') || 'None'}\n\n## Code smells\n${a.code_smells.map(s=>`- ${s}`).join('\n') || 'None'}\n\n## Performance suggestions\n${a.performance.map(s=>`- ${s}`).join('\n') || 'None'}\n\n## Best practices\n${a.best_practices.map(s=>`- ${s}`).join('\n') || 'None'}\n`;
+}
+function downloadReport(id){
+  const a = history_.find(h=>h.id===id) || currentAnalysis;
+  const md = buildReportMarkdown(a);
+  const blob = new Blob([md], {type:'text/markdown'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = `report-${a.filename||'analysis'}.md`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------- HISTORY ---------------- */
+async function loadHistory(){
+  try{
+    const list = await window.storage.list('analysis:', false);
+    if(list && list.keys){
+      const items = [];
+      for(const k of list.keys){
+        const r = await safeGet(k, false);
+        if(r) items.push(JSON.parse(r.value));
+      }
+      history_ = items.sort((a,b)=>b.ts-a.ts);
+    }
+  }catch(e){}
+}
+function renderHistory(){
+  if(!history_.length) return `<div class="card"><div class="empty-state"><i class="ti ti-history"></i>No past analyses yet.</div></div>`;
+  return `<div class="card">${history_.map(h=>`<div class="list-row" style="cursor:pointer;" onclick="viewHistoryItem('${h.id}')"><span><i class="ti ti-file-code" style="color:var(--text-muted);margin-right:8px;"></i>${escapeHtml(h.filename||'snippet')} <span style="color:var(--text-muted);">· ${h.language} · ${timeAgo(h.ts)}</span></span><span class="badge badge-${sevColor(h.metrics.security_score<50?'High':h.metrics.security_score<80?'Medium':'Low')}">sec ${h.metrics.security_score} · qual ${h.metrics.quality_score}</span></div>`).join('')}</div>`;
+}
+function viewHistoryItem(id){ currentAnalysis = history_.find(h=>h.id===id); setView('results'); }
+
+/* ---------------- REPORTS ---------------- */
+function renderReports(){
+  if(!history_.length) return `<div class="card"><div class="empty-state"><i class="ti ti-file-text"></i>No reports yet — run an analysis to generate one.</div></div>`;
+  return `<div class="card">${history_.map(h=>`<div class="list-row"><span><i class="ti ti-file-text" style="color:var(--text-muted);margin-right:8px;"></i>Report — ${escapeHtml(h.filename||'snippet')} <span style="color:var(--text-muted);">· ${timeAgo(h.ts)}</span></span><button class="btn" onclick="downloadReport('${h.id}')"><i class="ti ti-download"></i>Download</button></div>`).join('')}</div>`;
+}
+
+/* ---------------- CHAT ---------------- */
+async function loadChat(){
+  try{ const r = await safeGet('chat:messages', false); if(r) chatMessages = JSON.parse(r.value); }catch(e){}
+}
+function renderChat(){
+  const suggestions = ['Explain what my last uploaded file does','How do I fix the top security issue?','Suggest a safer way to write SQL queries','What does a high complexity score mean?'];
+  return `
+  <div class="chat-wrap">
+    <div style="margin-bottom:6px;"><span class="section-title" style="margin-bottom:0;"><i class="ti ti-message-circle"></i>Conversational Code Assistant</span></div>
+    <div class="chat-msgs" id="chat-msgs">
+      ${chatMessages.length ? chatMessages.map(m=>`<div class="msg ${m.role}">${m.role==='assistant'?renderMarkdownLite(m.content):escapeHtml(m.content)}</div>`).join('') : `
+      <div class="suggested">${suggestions.map(s=>`<span class="sugg-chip" onclick="sendChat(${JSON.stringify(s)})">${s}</span>`).join('')}</div>
+      <div class="empty-state"><i class="ti ti-message-circle"></i>Ask anything about your code or secure coding practices.</div>`}
+    </div>
+    <div class="chat-input-row">
+      <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;white-space:nowrap;"><input type="checkbox" id="use-context" ${currentAnalysis?'checked':''}>Use last file</label>
+      <textarea id="chat-input" placeholder="Ask about your code..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"></textarea>
+      <button class="btn btn-primary" onclick="sendChat()"><i class="ti ti-send"></i></button>
+    </div>
+  </div>`;
+}
+function scrollChatBottom(){ const el = document.getElementById('chat-msgs'); if(el) el.scrollTop = el.scrollHeight; }
+
+async function sendChat(preset){
+  const input = document.getElementById('chat-input');
+  const text = preset || input.value.trim();
+  if(!text) return;
+  const useContext = document.getElementById('use-context')?.checked;
+  chatMessages.push({role:'user', content:text});
+  input.value='';
+  setView('chat');
+  scrollChatBottom();
+
+  const msgs = chatMessages.map(m=>({role:m.role, content:m.content}));
+  let system = "You are Sentinel's AI assistant. Answer clearly and concisely, using markdown with code blocks where helpful.";
+  if(useContext && currentAnalysis){
+    system += ` The user's most recently analyzed file (${currentAnalysis.filename}, ${currentAnalysis.language}) is:\n\`\`\`\n${currentAnalysis.code.slice(0,4000)}\n\`\`\`\nIts analysis summary: ${currentAnalysis.summary}`;
+  }
+  chatMessages.push({role:'assistant', content:'…'});
+  setView('chat'); scrollChatBottom();
+  try{
+    const reply = await callClaude(msgs, system);
+    chatMessages[chatMessages.length-1] = {role:'assistant', content:reply};
+  }catch(e){
+    chatMessages[chatMessages.length-1] = {role:'assistant', content:'Something went wrong reaching the AI service. Please try again.'};
+  }
+  try{ await window.storage.set('chat:messages', JSON.stringify(chatMessages.slice(-40)), false); }catch(e){}
+  setView('chat'); scrollChatBottom();
+}
+
+/* ---------------- PROFILE / SETTINGS ---------------- */
+function renderProfile(){
+  return `<div class="card" style="max-width:480px;">
+    <div class="section-title"><i class="ti ti-user"></i>Profile</div>
+    <div class="field"><label>Full name</label><input type="text" id="profile-name" value="${escapeHtml(profile.name)}"></div>
+    <div class="field"><label>Email</label><input type="text" id="profile-email" value="${escapeHtml(profile.email)}"></div>
+    <button class="btn btn-primary" onclick="saveProfile()"><i class="ti ti-check"></i>Save changes</button>
+    <p id="profile-saved" style="font-size:12.5px;color:var(--success);margin-top:10px;"></p>
+  </div>`;
+}
+async function saveProfile(){
+  profile.name = document.getElementById('profile-name').value.trim() || profile.name;
+  profile.email = document.getElementById('profile-email').value.trim() || profile.email;
+  await window.storage.set('profile', JSON.stringify(profile), false);
+  document.getElementById('sidebar-name').textContent = profile.name;
+  document.getElementById('sidebar-avatar').textContent = profile.name.slice(0,1).toUpperCase();
+  document.getElementById('profile-saved').textContent = 'Saved.';
+}
+function renderSettings(){
+  return `<div class="card" style="max-width:520px;">
+    <div class="section-title"><i class="ti ti-settings"></i>Settings</div>
+    <div class="settings-row"><span>Dark mode</span><div class="toggle ${theme==='dark'?'on':''}" onclick="toggleTheme()"><div class="toggle-knob"></div></div></div>
+    <div class="settings-row"><span>Clear analysis history</span><button class="btn" onclick="clearHistory()">Clear</button></div>
+    <div class="settings-row"><span>Clear chat history</span><button class="btn" onclick="clearChat()">Clear</button></div>
+  </div>`;
+}
+async function clearHistory(){
+  for(const h of history_){ try{ await window.storage.delete('analysis:'+h.id, false); }catch(e){} }
+  history_ = []; currentAnalysis = null;
+  setView('settings');
+}
+async function clearChat(){
+  chatMessages = [];
+  try{ await window.storage.delete('chat:messages', false); }catch(e){}
+  setView('settings');
+}
+</script>
+</body>
+</html>
