@@ -1,0 +1,163 @@
+{
+  "results": [
+    {
+      "sample": "sample1_simple.py",
+      "language": "Python",
+      "expected_characteristic": "Basic code-quality issue (mutable default argument)",
+      "submission": {
+        "language_detected": "Python",
+        "auto_detected": false,
+        "syntax_valid": true,
+        "syntax_error": null
+      },
+      "engines_used": {
+        "code_analysis": "ast+radon",
+        "security_scan": "regex-fallback"
+      },
+      "bugs_detected": [
+        {
+          "title": "Mutable default argument",
+          "severity": "Medium"
+        }
+      ],
+      "security_issues_detected": [],
+      "code_smells_detected": [
+        "No significant code smells detected."
+      ],
+      "metrics": {
+        "security_score": 100,
+        "quality_score": 92,
+        "maintainability_score": 96,
+        "complexity": "Low"
+      },
+      "pr_verdict": "Approve with suggestions",
+      "fixes_generated": 1,
+      "report_findings_count": 1,
+      "report_severity_breakdown": {
+        "Critical": 0,
+        "High": 0,
+        "Medium": 1,
+        "Low": 0,
+        "Info": 0
+      },
+      "pdf_report_path": "validation\\report_sample1_simple_py.pdf",
+      "pdf_report_bytes": 4724,
+      "pdf_valid_header": true
+    },
+    {
+      "sample": "sample2_vulnerable.py",
+      "language": "Python",
+      "expected_characteristic": "Realistic security vulnerabilities (SQLi, hardcoded secret, command injection, weak crypto, bare except)",
+      "submission": {
+        "language_detected": "Python",
+        "auto_detected": false,
+        "syntax_valid": true,
+        "syntax_error": null
+      },
+      "engines_used": {
+        "code_analysis": "ast+radon",
+        "security_scan": "regex-fallback"
+      },
+      "bugs_detected": [
+        {
+          "title": "Bare except clause",
+          "severity": "Medium"
+        }
+      ],
+      "security_issues_detected": [
+        {
+          "title": "Possible SQL Injection (string-built query)",
+          "severity": "Critical",
+          "owasp_category": "A03: Injection"
+        },
+        {
+          "title": "Command Injection",
+          "severity": "Critical",
+          "owasp_category": "A03: Injection"
+        },
+        {
+          "title": "Weak cryptographic algorithm",
+          "severity": "Medium",
+          "owasp_category": "A02: Cryptographic Failures"
+        }
+      ],
+      "code_smells_detected": [
+        "No significant code smells detected."
+      ],
+      "metrics": {
+        "security_score": 32,
+        "quality_score": 92,
+        "maintainability_score": 88,
+        "complexity": "Low"
+      },
+      "pr_verdict": "Block",
+      "fixes_generated": 4,
+      "report_findings_count": 4,
+      "report_severity_breakdown": {
+        "Critical": 2,
+        "High": 0,
+        "Medium": 2,
+        "Low": 0,
+        "Info": 0
+      },
+      "pdf_report_path": "validation\\report_sample2_vulnerable_py.pdf",
+      "pdf_report_bytes": 7237,
+      "pdf_valid_header": true
+    },
+    {
+      "sample": "sample3_sample.java",
+      "language": "Java",
+      "expected_characteristic": "Java code-quality/security issues (SQLi, hardcoded secret, empty catch, too many params)",
+      "submission": {
+        "language_detected": "Java",
+        "auto_detected": false,
+        "syntax_valid": true,
+        "syntax_error": null
+      },
+      "engines_used": {
+        "code_analysis": "javalang",
+        "security_scan": "regex-fallback"
+      },
+      "bugs_detected": [
+        {
+          "title": "Method with too many parameters",
+          "severity": "Low"
+        }
+      ],
+      "security_issues_detected": [
+        {
+          "title": "Possible SQL Injection (string-built query)",
+          "severity": "Critical",
+          "owasp_category": "A03: Injection"
+        },
+        {
+          "title": "Command Injection",
+          "severity": "Critical",
+          "owasp_category": "A03: Injection"
+        }
+      ],
+      "code_smells_detected": [
+        "Empty catch block \u2014 exception silently swallowed (1x)"
+      ],
+      "metrics": {
+        "security_score": 40,
+        "quality_score": 93,
+        "maintainability_score": 66,
+        "complexity": "High"
+      },
+      "pr_verdict": "Block",
+      "fixes_generated": 3,
+      "report_findings_count": 3,
+      "report_severity_breakdown": {
+        "Critical": 2,
+        "High": 0,
+        "Medium": 0,
+        "Low": 1,
+        "Info": 0
+      },
+      "pdf_report_path": "validation\\report_sample3_sample_java.pdf",
+      "pdf_report_bytes": 6351,
+      "pdf_valid_header": true
+    }
+  ]
+}

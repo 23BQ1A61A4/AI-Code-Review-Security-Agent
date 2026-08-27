@@ -1,0 +1,92 @@
+[
+  {
+    "kind": "sql_injection",
+    "title": "Possible SQL Injection",
+    "pattern": "(execute|executeQuery|executeUpdate|cursor\\.execute)\\s*\\(\\s*(f[\"']|[\"'][^\"']*[\"']\\s*\\+|.*%\\s*\\()",
+    "flags": "IGNORECASE",
+    "severity": "Critical",
+    "owasp_category": "A03: Injection",
+    "detail": "SQL query appears to be built with string concatenation/formatting instead of bound parameters."
+  },
+  {
+    "kind": "sql_injection2",
+    "title": "Possible SQL Injection (string-built query)",
+    "pattern": "\\b(SELECT|INSERT|UPDATE|DELETE)\\b[^\"';]{0,80}[\"']{1,2}\\s*\\+\\s*\\w+",
+    "flags": "IGNORECASE",
+    "severity": "Critical",
+    "owasp_category": "A03: Injection",
+    "detail": "A SQL statement is concatenated with a variable, allowing attacker-controlled input to alter the query."
+  },
+  {
+    "kind": "hardcoded_secret",
+    "title": "Hardcoded secret",
+    "pattern": "(?i)\\b(password|passwd|api[_-]?key|secret[_-]?key|access[_-]?key|token)\\s*[:=]\\s*[\"'][^\"'\\s]{4,}[\"']",
+    "flags": "",
+    "severity": "High",
+    "owasp_category": "A02: Cryptographic Failures",
+    "detail": "A credential/secret is hardcoded as a string literal instead of loaded from environment/secret storage."
+  },
+  {
+    "kind": "command_injection",
+    "title": "Command Injection",
+    "pattern": "\\bos\\.system\\s*\\(|subprocess\\.\\w+\\([^)]*shell\\s*=\\s*True|Runtime\\.getRuntime\\(\\)\\.exec\\(",
+    "flags": "",
+    "severity": "Critical",
+    "owasp_category": "A03: Injection",
+    "detail": "A shell command is executed, and if any part comes from user input this allows arbitrary command execution."
+  },
+  {
+    "kind": "insecure_deserialization",
+    "title": "Insecure Deserialization",
+    "pattern": "\\bpickle\\.(loads|load)\\s*\\(|yaml\\.load\\s*\\((?!.*SafeLoader)|new\\s+ObjectInputStream",
+    "flags": "",
+    "severity": "High",
+    "owasp_category": "A08: Software and Data Integrity Failures",
+    "detail": "Deserializing untrusted data with pickle/yaml.load/ObjectInputStream can lead to remote code execution."
+  },
+  {
+    "kind": "eval_exec",
+    "title": "Dynamic code execution",
+    "pattern": "(?<![\\w.])(eval|exec)\\s*\\(",
+    "flags": "",
+    "severity": "High",
+    "owasp_category": "A03: Injection",
+    "detail": "`eval`/`exec` on data that could be influenced by a user allows arbitrary code execution."
+  },
+  {
+    "kind": "weak_crypto",
+    "title": "Weak cryptographic algorithm",
+    "pattern": "(?i)\\bhashlib\\.(md5|sha1)\\(|MessageDigest\\.getInstance\\(\\s*[\"'](MD5|SHA-?1)[\"']|\\bDES\\b",
+    "flags": "",
+    "severity": "Medium",
+    "owasp_category": "A02: Cryptographic Failures",
+    "detail": "MD5/SHA-1/DES are cryptographically broken for security-sensitive use — use SHA-256+ or bcrypt/Argon2 for passwords."
+  },
+  {
+    "kind": "xss",
+    "title": "Potential Cross-Site Scripting (XSS)",
+    "pattern": "\\.innerHTML\\s*=(?!=)|render_template_string\\s*\\(|getWriter\\(\\)\\.println\\(",
+    "flags": "",
+    "severity": "High",
+    "owasp_category": "A03: Injection",
+    "detail": "User-influenced content is written directly into HTML/response output without escaping."
+  },
+  {
+    "kind": "debug_mode",
+    "title": "Debug mode enabled",
+    "pattern": "debug\\s*=\\s*True",
+    "flags": "",
+    "severity": "Medium",
+    "owasp_category": "A05: Security Misconfiguration",
+    "detail": "Running with debug mode on in production can leak stack traces and enable a remote debugger/console."
+  },
+  {
+    "kind": "path_traversal",
+    "title": "Possible Path Traversal",
+    "pattern": "open\\s*\\([^)]*(request\\.\\w+|args\\.get|params\\[)",
+    "flags": "",
+    "severity": "Medium",
+    "owasp_category": "A01: Broken Access Control",
+    "detail": "A file path built from request input without validation could allow reading files outside the intended directory."
+  }
+]

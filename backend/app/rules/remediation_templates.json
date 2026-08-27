@@ -1,0 +1,121 @@
+{
+  "security_templates": {
+    "sql_injection": {
+      "recommendation": "Use parameterized queries / bound placeholders instead of building SQL with string concatenation or f-strings.",
+      "corrected_code": "cursor.execute(\"SELECT * FROM users WHERE id = %s\", (user_id,))"
+    },
+    "sql_injection2": {
+      "recommendation": "Replace string concatenation with a parameterized query or your ORM's query builder.",
+      "corrected_code": "cursor.execute(\"SELECT * FROM users WHERE id = ?\", (user_id,))"
+    },
+    "hardcoded_secret": {
+      "recommendation": "Move credentials/secrets out of source code and load them from environment variables or a secure secrets manager.",
+      "corrected_code": "import os\nAPI_KEY = os.getenv(\"API_KEY\")"
+    },
+    "command_injection": {
+      "recommendation": "Avoid shell=True / string commands; pass an argument list and validate/allow-list any user input.",
+      "corrected_code": "subprocess.run([\"ls\", \"-la\", safe_dir], shell=False, check=True)"
+    },
+    "insecure_deserialization": {
+      "recommendation": "Use a safe data format (JSON) or a safe loader instead of pickle/unsafe YAML/ObjectInputStream on untrusted data.",
+      "corrected_code": "import yaml\nconfig = yaml.safe_load(untrusted_bytes)"
+    },
+    "eval_exec": {
+      "recommendation": "Avoid eval/exec on data that could be user-influenced; use ast.literal_eval for literals or a proper parser.",
+      "corrected_code": "import ast\nvalue = ast.literal_eval(user_expression)"
+    },
+    "weak_crypto": {
+      "recommendation": "Use SHA-256+ for hashing and bcrypt/Argon2 for password storage instead of MD5/SHA-1/DES.",
+      "corrected_code": "import hashlib\ndigest = hashlib.sha256(data).hexdigest()"
+    },
+    "xss": {
+      "recommendation": "Escape output before writing it into HTML, or use a template engine with auto-escaping enabled.",
+      "corrected_code": "el.textContent = userInput;  // instead of el.innerHTML = userInput"
+    },
+    "debug_mode": {
+      "recommendation": "Disable debug mode in production and read the flag from an environment variable.",
+      "corrected_code": "app.run(debug=os.getenv(\"DEBUG\", \"false\").lower() == \"true\")"
+    },
+    "path_traversal": {
+      "recommendation": "Validate the requested path against an allow-listed base directory before opening it.",
+      "corrected_code": "safe_path = (BASE_DIR / requested_name).resolve()\nassert safe_path.is_relative_to(BASE_DIR)"
+    },
+    "ssrf": {
+      "recommendation": "Validate and allowlist destination URLs/IPs before initiating server-side HTTP requests.",
+      "corrected_code": "if parsed_url.hostname not in ALLOWED_HOSTS:\n    raise ValueError('Forbidden destination')"
+    }
+  },
+  "bug_keyword_templates": [
+    {
+      "keyword": "bare except",
+      "recommendation": "Catch a specific exception type and log it instead of silencing every error.",
+      "corrected_code": "try:\n    do_work()\nexcept ValueError as e:\n    logger.exception(e)"
+    },
+    {
+      "keyword": "empty catch",
+      "recommendation": "Log the caught exception instead of leaving the catch block empty.",
+      "corrected_code": "try {\n    doWork();\n} catch (IOException e) {\n    logger.error(\"doWork failed\", e);\n}"
+    },
+    {
+      "keyword": "mutable default",
+      "recommendation": "Use `None` as the default and create the mutable object inside the function body.",
+      "corrected_code": "def f(x, items=None):\n    items = items if items is not None else []"
+    },
+    {
+      "keyword": "too many parameters",
+      "recommendation": "Group related parameters into a dataclass, record, or config object.",
+      "corrected_code": "@dataclass\nclass Options:\n    a: int\n    b: int\n\ndef f(opts: Options): ..."
+    },
+    {
+      "keyword": "deep nesting",
+      "recommendation": "Use guard clauses / early returns to flatten nested conditionals.",
+      "corrected_code": "if not is_valid(x):\n    return None\nprocess(x)"
+    },
+    {
+      "keyword": "long function",
+      "recommendation": "Extract cohesive blocks into smaller, well-named helper functions.",
+      "corrected_code": "def handle_request(req):\n    data = parse(req)\n    validate(data)\n    return respond(data)"
+    },
+    {
+      "keyword": "long method",
+      "recommendation": "Extract cohesive blocks into smaller, well-named helper methods.",
+      "corrected_code": "void handleRequest(Request req) {\n    Data d = parse(req);\n    validate(d);\n    respond(d);\n}"
+    },
+    {
+      "keyword": "global",
+      "recommendation": "Avoid mutable global state; pass state explicitly as function/class parameters.",
+      "corrected_code": "class Service:\n    def __init__(self, state):\n        self.state = state"
+    },
+    {
+      "keyword": "unclosed",
+      "recommendation": "Use context managers (try-with-resources or `with` statements) to guarantee cleanup.",
+      "corrected_code": "with open(filename, 'r', encoding='utf-8') as f:\n    content = f.read()"
+    }
+  ],
+  "bandit_template_map": {
+    "B608": "sql_injection2",
+    "B610": "sql_injection2",
+    "B611": "sql_injection2",
+    "B601": "command_injection",
+    "B602": "command_injection",
+    "B603": "command_injection",
+    "B604": "command_injection",
+    "B605": "command_injection",
+    "B606": "command_injection",
+    "B607": "command_injection",
+    "B609": "command_injection",
+    "B105": "hardcoded_secret",
+    "B106": "hardcoded_secret",
+    "B107": "hardcoded_secret",
+    "B301": "insecure_deserialization",
+    "B302": "insecure_deserialization",
+    "B506": "insecure_deserialization",
+    "B307": "eval_exec",
+    "B102": "eval_exec",
+    "B303": "weak_crypto",
+    "B304": "weak_crypto",
+    "B305": "weak_crypto",
+    "B324": "weak_crypto",
+    "B201": "debug_mode"
+  }
+}

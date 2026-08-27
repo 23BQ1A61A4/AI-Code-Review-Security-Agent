@@ -1,0 +1,50 @@
+{
+  "root_cause": {
+    "sql_injection": "User-controlled input is concatenated directly into a SQL statement instead of being passed as a bound parameter.",
+    "sql_injection2": "A SQL string is built by string concatenation, so any attacker-controlled value becomes part of the query grammar itself.",
+    "hardcoded_secret": "A credential is embedded as a literal in source code, so it ships with every copy of the codebase and every commit in version history.",
+    "command_injection": "A shell command is constructed from data that can be influenced by a caller/user, and the shell is invoked to interpret it.",
+    "insecure_deserialization": "Untrusted bytes are deserialized with a format (pickle/unsafe YAML/native object streams) that can execute arbitrary code during deserialization.",
+    "eval_exec": "Dynamic code evaluation is applied to a value whose origin is not guaranteed to be a trusted, literal expression.",
+    "weak_crypto": "A cryptographically broken or deprecated primitive is used for a security-sensitive operation.",
+    "xss": "Output containing potentially attacker-influenced content is written into an HTML response without escaping.",
+    "debug_mode": "Debug mode is left enabled, which is intended for local development, not production traffic.",
+    "path_traversal": "A filesystem path is built from request input without normalizing/validating it against an allowed base directory.",
+    "ssrf": "The application makes arbitrary outbound requests to addresses derived from unvalidated user input."
+  },
+  "best_practice": {
+    "sql_injection": "Always use parameterized queries or an ORM query builder; never format user input into SQL text.",
+    "sql_injection2": "Treat every user-supplied value as data, never as part of the query string.",
+    "hardcoded_secret": "Store secrets in environment variables or a secrets manager, and rotate any secret that was ever committed.",
+    "command_injection": "Prefer library APIs over shelling out; if a shell command is unavoidable, pass an argument list and never `shell=True` with untrusted input.",
+    "insecure_deserialization": "Use JSON (or another data-only format) for untrusted input, and never unpickle data you did not create yourself.",
+    "eval_exec": "Avoid eval/exec entirely for anything derived from user input; use ast.literal_eval or a real parser instead.",
+    "weak_crypto": "Use SHA-256 or better for integrity, and bcrypt/Argon2/scrypt (never a bare hash) for password storage.",
+    "xss": "Rely on your templating engine's autoescaping and set output via textContent, not innerHTML.",
+    "debug_mode": "Gate debug mode behind an environment variable that defaults to false, and never enable it in a deployed environment.",
+    "path_traversal": "Resolve the final path and assert it is still inside the intended base directory before opening it.",
+    "ssrf": "Implement strict allow-listing of domains and IP protocols before issuing server-side HTTP calls."
+  },
+  "bug_root_cause": {
+    "bare except": "The exception type is not specified, so the handler intercepts every exception — including ones it wasn't written to handle.",
+    "empty catch": "The exception is caught but never logged or handled, so failures are silently discarded.",
+    "mutable default": "A list/dict default argument is created once at function-definition time and then shared across every call that doesn't pass its own value.",
+    "too many parameters": "The function accepts many independent parameters instead of a single cohesive object, which is a sign it is doing too much or its inputs aren't modeled.",
+    "deep nesting": "Conditional logic is nested many levels deep instead of using early returns/guard clauses, making the control flow hard to follow and test.",
+    "long function": "The function accumulates multiple responsibilities instead of delegating to smaller, named helpers.",
+    "long method": "The method accumulates multiple responsibilities instead of delegating to smaller, named helpers.",
+    "global": "Mutable global state introduces hidden coupling between disparate functions.",
+    "unclosed": "Resources (files, sockets) may leak if exceptions occur before explicit close calls."
+  },
+  "bug_best_practice": {
+    "bare except": "Catch the specific exception type you expect and handle or log it explicitly.",
+    "empty catch": "Always log or otherwise act on a caught exception; never leave a catch block empty.",
+    "mutable default": "Default mutable arguments to None and construct the object inside the function body.",
+    "too many parameters": "Group related parameters into a dataclass/struct so the function signature documents intent.",
+    "deep nesting": "Return early on invalid/edge cases so the main logic isn't nested inside multiple conditionals.",
+    "long function": "Keep functions focused on one responsibility; extract helpers for reuse and testability.",
+    "long method": "Keep methods focused on one responsibility; extract helpers for reuse and testability.",
+    "global": "Pass dependencies explicitly to functions or encapsulate state inside classes.",
+    "unclosed": "Use context managers (`with` statements or try-with-resources) for deterministic cleanup."
+  }
+}
